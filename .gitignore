@@ -7,3 +7,7 @@
 *.app
 local.properties
 .DS_Store
+/entry/oh_modules/
+/.cxx/
+/capture/
+*.p12.bak

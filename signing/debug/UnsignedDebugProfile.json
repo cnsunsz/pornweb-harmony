@@ -1,0 +1,30 @@
+{
+  "version-name": "1.0.0",
+  "version-code": 1,
+  "uuid": "b2863948-5b32-440b-9d4e-2332e8ac1fa7",
+  "validity": {
+    "not-before": 1794034128,
+    "not-after": 2109480528
+  },
+  "type": "debug",
+  "bundle-info": {
+    "developer-id": "PornWeb",
+    "development-certificate": "-----BEGIN CERTIFICATE-----\nMIICLjCCAbWgAwIBAgIEcoXhtjAKBggqhkjOPQQDAjBjMQswCQYDVQQGEwJDTjEU\nMBIGA1UECgwLT3Blbkhhcm1vbnkxGTAXBgNVBAsMEE9wZW5IYXJtb255IFRlYW0x\nIzAhBgNVBAMMGk9wZW5IYXJtb255IEFwcGxpY2F0aW9uIENBMB4XDTI2MTEwODA2\nNDg0OFoXDTI5MTEwNzA2NDg0OFowTzELMAkGA1UEBhMCQ04xEDAOBgNVBAoMB1Bv\ncm5XZWIxDjAMBgNVBAsMBURlYnVnMR4wHAYDVQQDDBVQb3JuV2ViIEhhcm1vbnkg\nRGVidWcwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASIsfo8Pmvlk2Tu87ZW8fIe\nDuWzarU4YC9G5MULKLmZYmRj31ww4LFXZh27lO4xb+cBO41zCmIzCKxpALzKlSgV\no2swaTAdBgNVHQ4EFgQU5drnXQCYykj0vXJPG1eySjTJHxkwCQYDVR0TBAIwADAO\nBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAwwCgYIKwYBBQUHAwMwGAYMKwYBBAGPWwKC\neAEDBAgwBgIBAQoBADAKBggqhkjOPQQDAgNnADBkAjBaClsVNcq71M5ZtuVzYqv3\nqwyO55FkfhTb/xaZOR6UFfhMkXhrP89qBRNH1jHrHpACMEws1ZahzzzmuN5E/iCq\neqxg/h3VuTdQcFfZNfW/VFqsIAZ5ZLH/yMBNYjt9qBMBhQ==\n-----END CERTIFICATE-----\n",
+    "bundle-name": "com.pornweb.harmony",
+    "apl": "normal",
+    "app-feature": "hos_normal_app"
+  },
+  "acls": {
+    "allowed-acls": []
+  },
+  "permissions": {
+    "restricted-permissions": []
+  },
+  "debug-info": {
+    "device-ids": [
+      "*"
+    ],
+    "device-id-type": "udid"
+  },
+  "issuer": "pki_internal"
+}

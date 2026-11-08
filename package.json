@@ -1,0 +1,12 @@
+{
+  "name": "pornweb-harmony",
+  "version": "1.0.0",
+  "ohos": {
+    "org": "pornweb",
+    "buildTool": "hvigor",
+    "directoryLevel": "project"
+  },
+  "description": "PornWeb HarmonyOS (鸿蒙版) Stage client",
+  "license": "UNLICENSED",
+  "dependencies": {}
+}

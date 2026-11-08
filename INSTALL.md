@@ -98,3 +98,10 @@ chmod -R u+rwX,go+rX command-line-tools/bin command-line-tools/ohpm/bin \
   command-line-tools/hvigor/bin command-line-tools/tool
 # env.sh is recreated from this INSTALL.md or kept alongside if you copy it back
 ```
+
+
+## Debug signing (scaffold)
+
+Local OpenHarmony debug materials live under `signing/debug/` (p12 / pem / p7b + `material/` cipher dir).
+Passwords in `build-profile.json5` are DevEco-style hex ciphertext for plaintext `DebugKey`.
+Rebuild HAP after changing certs; do not use these for store release — replace with Huawei official signing.
