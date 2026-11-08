@@ -4,6 +4,10 @@
 
 与网页 / 安卓主线共用同一套后端 API；本仓库独立发版。
 
+## 构建工具
+
+见 [INSTALL.md](./INSTALL.md)：本机已解压 HarmonyOS Command Line Tools 26.0.0.865（含 API 26 SDK），`source /workspace/harmonyos-sdk/env.sh` 后可用 `hvigorw` / `ohpm`。
+
 ## 状态
 
 - 工程脚手架建设中
