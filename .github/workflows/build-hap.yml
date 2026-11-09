@@ -1,0 +1,159 @@
+name: Build HAP
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-hap-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SDK_RELEASE_TAG: sdk-26.0.0.865
+  SDK_ASSET: commandline-tools-linux-x64-26.0.0.865-ci.tar.gz
+  HARMONY_ROOT: ${{ github.workspace }}/.harmonyos-sdk
+  # Cache key version bump when SDK asset changes
+  SDK_CACHE_VERSION: v1-26.0.0.865-ci
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Temurin JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Free disk space
+        run: |
+          set -euo pipefail
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          df -h
+
+      - name: Restore HarmonyOS tools cache
+        id: cache-sdk
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.HARMONY_ROOT }}
+          key: harmony-clt-${{ env.SDK_CACHE_VERSION }}-${{ runner.os }}
+
+      - name: Download & extract Command Line Tools
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HARMONY_ROOT"
+          cd "$HARMONY_ROOT"
+          echo "Downloading $SDK_ASSET from release $SDK_RELEASE_TAG ..."
+          gh release download "$SDK_RELEASE_TAG" \
+            --repo "${{ github.repository }}" \
+            --pattern "$SDK_ASSET" \
+            --dir .
+          ls -lah "$SDK_ASSET"
+          echo "Extracting..."
+          tar -xzf "$SDK_ASSET"
+          rm -f "$SDK_ASSET"
+          chmod -R u+rwX,go+rX command-line-tools/bin \
+            command-line-tools/ohpm/bin command-line-tools/hvigor/bin \
+            command-line-tools/tool || true
+          test -x command-line-tools/bin/hvigorw
+          test -x command-line-tools/bin/ohpm
+          command-line-tools/bin/hvigorw -v
+          command-line-tools/bin/ohpm -v
+          df -h
+          du -sh command-line-tools
+
+      - name: Configure HarmonyOS env
+        run: |
+          set -euo pipefail
+          CLT="$HARMONY_ROOT/command-line-tools"
+          echo "HARMONY_CLT_HOME=$CLT" >> "$GITHUB_ENV"
+          echo "DEVECO_SDK_HOME=$CLT/sdk" >> "$GITHUB_ENV"
+          echo "OHOS_SDK_HOME=$CLT/sdk" >> "$GITHUB_ENV"
+          echo "DEVECO_NODE_HOME=$CLT/tool/node" >> "$GITHUB_ENV"
+          echo "NODE_HOME=$CLT/tool/node" >> "$GITHUB_ENV"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          echo "$CLT/bin" >> "$GITHUB_PATH"
+          echo "$CLT/tool/node/bin" >> "$GITHUB_PATH"
+          echo "$CLT/sdk/default/openharmony/toolchains" >> "$GITHUB_PATH"
+          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Verify toolchain
+        run: |
+          set -euo pipefail
+          which hvigorw ohpm node java
+          hvigorw -v
+          ohpm -v
+          node -v
+          java -version
+
+      - name: ohpm install
+        run: ohpm install
+
+      - name: Assemble HAP
+        run: |
+          set -euo pipefail
+          hvigorw assembleHap \
+            --mode module \
+            -p module=entry@default \
+            -p product=default \
+            --no-daemon
+
+      - name: Collect HAP artifacts
+        id: collect
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          SIGNED=$(find entry/build -name '*-signed.hap' | head -1)
+          UNSIGNED=$(find entry/build -name '*-unsigned.hap' | head -1)
+          test -n "$SIGNED" && test -f "$SIGNED"
+          cp -a "$SIGNED" "dist/PornWeb-entry-default-signed.hap"
+          if [ -n "${UNSIGNED:-}" ] && [ -f "$UNSIGNED" ]; then
+            cp -a "$UNSIGNED" "dist/PornWeb-entry-default-unsigned.hap"
+          fi
+          ls -lah dist/
+          echo "signed=dist/PornWeb-entry-default-signed.hap" >> "$GITHUB_OUTPUT"
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pornweb-harmony-hap
+          path: dist/*.hap
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach HAPs to GitHub Release (version tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          # Skip SDK toolchain tags if any ever match v* (none today)
+          if [[ "$TAG" == sdk-* ]]; then
+            echo "Skipping SDK tag $TAG"
+            exit 0
+          fi
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.hap --repo "${{ github.repository }}" --clobber
+          else
+            gh release create "$TAG" dist/*.hap \
+              --repo "${{ github.repository }}" \
+              --title "$TAG" \
+              --generate-notes \
+              --verify-tag
+          fi

@@ -1,107 +1,58 @@
-# HarmonyOS Command Line Tools — install notes (PornWeb 鸿蒙版)
+# Building PornWeb HarmonyOS（鸿蒙版）
 
-Local box install for building the ArkTS Stage-model client. Default API base URL (hardcoded in app code, not here): `https://web.cnsz.kdns.fr`.
+Default API base URL (hardcoded in app): `https://web.cnsz.kdns.fr`.
 
-## Install path
+## Primary: GitHub Actions (recommended)
 
-| Item | Path |
+CI builds the HAP on `ubuntu-latest` without interactive Huawei login.
+
+| Item | Value |
 | --- | --- |
-| ZIP source | `/workspace/harmonyos-dl/commandline-tools-linux-x64-26.0.0.865.zip` (~2.2G) |
-| Extracted root | `/workspace/harmonyos-sdk/command-line-tools/` (~7.1G) |
-| Env script | `source /workspace/harmonyos-sdk/env.sh` |
-| Bundled SDK | `/workspace/harmonyos-sdk/command-line-tools/sdk` → HarmonyOS **26.0.0.105** (API **26**) |
-| Bundled Node | `/workspace/harmonyos-sdk/command-line-tools/tool/node` → **v24.14.1** |
-| Host JDK (not in ZIP) | `/home/box/jdk-17` (Temurin 17.0.21) — used for packing/signing JARs |
+| Workflow | [`.github/workflows/build-hap.yml`](./.github/workflows/build-hap.yml) |
+| Triggers | `push`/`PR` to `main`, tags `v*`, `workflow_dispatch` |
+| Toolchain asset | Release [`sdk-26.0.0.865`](https://github.com/cnsunsz/pornweb-harmony/releases/tag/sdk-26.0.0.865) → `commandline-tools-linux-x64-26.0.0.865-ci.tar.gz` (slim CI pack: bin/sdk/hvigor/ohpm/node; no emulator/linter) |
+| Artifact | Workflow artifact `pornweb-harmony-hap` (`*-signed.hap` / `*-unsigned.hap`) |
+| Version tags | On `v*`, HAPs are attached to that GitHub Release |
 
-Package `version.txt`:
-
-- Command Line Tools: **26.0.0.865**
-- hvigor: **6.26.9**
-- ohpm: **26.0.0.630**
-- hstack: 6.1.0 / codelinter: 6.0.240
-- HarmonyOS SDK: 26.0.0 Release (Ohos_sdk_public 26.0.0.105, API 26)
-
-SDK layout under `sdk/default/`: `openharmony/{ets,js,native,toolchains,previewer}` and `hms/{ets,js,native,toolchains,previewer}` — **complete enough for CLI builds; no extra SDK download required from this ZIP.**
-
-## One-time extract (already done on this box)
+### Manual re-run
 
 ```bash
-mkdir -p /workspace/harmonyos-sdk
-cd /workspace/harmonyos-sdk
-unzip -q /workspace/harmonyos-dl/commandline-tools-linux-x64-26.0.0.865.zip
-# wrappers need execute bit (zip may ship as r-x for owner only)
-chmod -R u+rwX,go+rX command-line-tools/bin command-line-tools/ohpm/bin \
-  command-line-tools/hvigor/bin command-line-tools/tool
+gh workflow run build-hap.yml --repo cnsunsz/pornweb-harmony
+gh run list --repo cnsunsz/pornweb-harmony --workflow=build-hap.yml -L 5
 ```
 
-No interactive license prompt was required for `hvigorw` / `ohpm` / `hdc`. `LICENSE.txt` / `NOTICE.txt` sit under `command-line-tools/`.
+### Signing note (current CI)
 
-## Environment
+The repo’s `signing/debug/` materials produce an **OpenHarmony debug**-signed HAP (keystore password ciphertext for `DebugKey`). That is fine for CI/dev sideload on OpenHarmony/debug-friendly images.
+
+**Huawei consumer phones / AppGallery** need **AGC / Huawei official** release signing (profile + cert from AppGallery Connect). That is **not** wired in CI yet — keep local tools until release signing is configured, then replace `signingConfigs` / secrets.
+
+## Optional: local Command Line Tools
+
+Only needed for local `assembleHap`, re-signing, or debugging the toolchain.
+
+1. Download the CI slim tarball from the `sdk-26.0.0.865` release (or the full Huawei ZIP if you already have it).
+2. Extract and put `command-line-tools/` somewhere stable, e.g. `/workspace/harmonyos-sdk/`.
+3. Install **JDK 17** (Temurin) for packing/signing JARs.
+4. Export env (example):
 
 ```bash
-source /workspace/harmonyos-sdk/env.sh
+export HARMONY_CLT_HOME=/path/to/command-line-tools
+export DEVECO_SDK_HOME=$HARMONY_CLT_HOME/sdk
+export OHOS_SDK_HOME=$DEVECO_SDK_HOME
+export DEVECO_NODE_HOME=$HARMONY_CLT_HOME/tool/node
+export JAVA_HOME=/path/to/jdk-17
+export PATH=$HARMONY_CLT_HOME/bin:$DEVECO_NODE_HOME/bin:$JAVA_HOME/bin:$DEVECO_SDK_HOME/default/openharmony/toolchains:$PATH
+
+ohpm install
+hvigorw assembleHap --mode module -p module=entry@default -p product=default --no-daemon
 ```
 
-That sets:
+If this machine still has `/workspace/harmonyos-sdk/env.sh`, `source` that instead.
 
-- `HARMONY_CLT_HOME` → `/workspace/harmonyos-sdk/command-line-tools`
-- `DEVECO_SDK_HOME` / `OHOS_SDK_HOME` → `$HARMONY_CLT_HOME/sdk`
-- `DEVECO_NODE_HOME` / `NODE_HOME` → `$HARMONY_CLT_HOME/tool/node`
-- `JAVA_HOME` → `/home/box/jdk-17` (fallback `/home/box/jdk-21`)
-- `PATH` prepends: `bin/`, Node `bin/`, JDK `bin/`, OpenHarmony `toolchains/` (`hdc`, `restool`, …)
+### Tool versions (26.0.0.865)
 
-Verify:
+- hvigorw **6.26.9** · ohpm **26.0.0.630** · Node **v24.14.1** (bundled)
+- HarmonyOS SDK **26.0.0.105** (API **26**)
 
-```bash
-hvigorw -v    # 6.26.9
-ohpm -v       # 26.0.0.630
-node -v       # v24.14.1
-java -version # Temurin 17.x
-hdc -v        # Ver: 3.2.0f
-ohpm ping     # registry https://ohpm.openharmony.cn/ohpm/ → PONG
-```
-
-Commands that worked on 2026-11-08 (Asia/Shanghai): all of the above after `source env.sh`.
-
-## Gaps / caveats
-
-1. **JDK is not inside the ZIP.** Packing/signing uses JARs (`app_packing_tool.jar`, hap-sign-tool). This box already has Temurin 17/21 under `/home/box/jdk-*`. Avoid JDK 25 with mismatched older API toolchains (hvigor can error). `apt` on this box could not refresh Debian mirrors (500 / unsigned) — if JDKs disappear, drop a portable Temurin tarball under `/home/box/jdk-17` and re-source `env.sh`.
-2. **No `hvigorw create` / scaffold CLI** in this package. Stage-model apps are usually created in DevEco Studio or by copying the official empty Stage template (manual `AppScope/`, `entry/`, `hvigorfile.ts`, `build-profile.json5`, `oh-package.json5`, …).
-3. **Debug signing materials** (keystore / `.p7b` profile / cert) are not in the ZIP. First `assembleHap` needs a local signingConfig in `build-profile.json5` (or unsigned debug flow if configured).
-4. **Emulator binary** is present under `command-line-tools/emulator/` but was not exercised here; device deploy uses `hdc`.
-5. ZIP / SDK stay under `/workspace` (not committed to the pornweb-harmony git repo).
-
-## Next scaffold steps (do not run until ready)
-
-Target repo: `/workspace/pornweb-harmony`. Prefer a minimal Stage model app for phone, API 26 / compatibleSdkVersion 12+ as needed.
-
-1. `source /workspace/harmonyos-sdk/env.sh`
-2. Add Stage project skeleton (or import DevEco “Empty Ability” template):
-   - Root: `hvigorfile.ts`, `hvigor/hvigor-config.json5`, `build-profile.json5`, `oh-package.json5`, `AppScope/app.json5`
-   - Module `entry/`: `src/main/module.json5`, `ets/entryability/EntryAbility.ets`, `ets/pages/Index.ets`, `resources/`, module `build-profile.json5` / `hvigorfile.ts` / `oh-package.json5`
-3. Point product compileSdkVersion / compatibleSdkVersion / targetSdkVersion at **HarmonyOS API 26** (or a lower compatible floor if targeting older devices).
-4. Hardcode API base: `https://web.cnsz.kdns.fr` (HTTPS only) in a shared config module — no server picker.
-5. `ohpm install` then `hvigorw assembleHap --no-daemon` (add signingConfig when needed).
-6. Install to device: `hdc install path/to/entry-default-signed.hap`
-
-App feature alignment (later): login, media browse/play, USDT/PayPal renew — same backend APIs as the web/Android clients.
-
-## Re-extract
-
-If `/workspace/harmonyos-sdk` is removed:
-
-```bash
-rm -rf /workspace/harmonyos-sdk
-mkdir -p /workspace/harmonyos-sdk && cd /workspace/harmonyos-sdk
-unzip -q /workspace/harmonyos-dl/commandline-tools-linux-x64-26.0.0.865.zip
-chmod -R u+rwX,go+rX command-line-tools/bin command-line-tools/ohpm/bin \
-  command-line-tools/hvigor/bin command-line-tools/tool
-# env.sh is recreated from this INSTALL.md or kept alongside if you copy it back
-```
-
-
-## Debug signing (scaffold)
-
-Local OpenHarmony debug materials live under `signing/debug/` (p12 / pem / p7b + `material/` cipher dir).
-Passwords in `build-profile.json5` are DevEco-style hex ciphertext for plaintext `DebugKey`.
-Rebuild HAP after changing certs; do not use these for store release — replace with Huawei official signing.
+No interactive license prompt is required for `hvigorw` / `ohpm` / `hdc` from this pack.

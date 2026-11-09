@@ -16,6 +16,10 @@
 - 产物：`entry/build/default/outputs/default/entry-default-signed.hap`
 
 ## Unreleased
+### Added
+- GitHub Actions `build-hap.yml`: download CI slim tools from release `sdk-26.0.0.865`, cache extract, `assembleHap`, upload HAP artifact; attach on `v*` tags
+- Docs: CI is primary build path; local SDK optional (Huawei AGC/release signing still local/TODO)
+
 ### 计划
 - 媒体浏览 / 播放 / 在线续费（USDT·PayPal）对齐网页 API
 - 正式华为签名与上架材料
