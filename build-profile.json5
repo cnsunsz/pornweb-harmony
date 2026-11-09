@@ -2,7 +2,7 @@
   "app": {
     "signingConfigs": [
       {
-        "name": "default",
+        "name": "debug",
         "type": "OpenHarmony",
         "material": {
           "storeFile": "signing/debug/pornweb-debug.p12",
@@ -13,12 +13,39 @@
           "profile": "signing/debug/pornweb-debug.p7b",
           "certpath": "signing/debug/pornweb-debug.pem"
         }
+      },
+      {
+        "name": "agcRelease",
+        "type": "HarmonyOS",
+        "material": {
+          "storeFile": "signing/release/pornweb-release.p12",
+          "storePassword": "00000028f645fd7a50f6da23cc8f243d617fa1affc0450c35756e3ee702a6c494306623c82839cb5a6820f2112c930ba8acb9d99bc5e0e02",
+          "keyAlias": "pornwebRelease",
+          "keyPassword": "0000002829d3b713914d7af4d2544ed134b118f59420939e4a4d7f1237df43c530a06ba1bdb23d8abdd9ca8c9489b1fc1c438bcad48cfdea",
+          "signAlg": "SHA256withECDSA",
+          "profile": "signing/release/pornweb-release.p7b",
+          "certpath": "signing/release/pornweb-release.cer"
+        }
       }
     ],
     "products": [
       {
         "name": "default",
-        "signingConfig": "default",
+        "signingConfig": "debug",
+        "compileSdkVersion": "26.0.0",
+        "compatibleSdkVersion": "26.0.0",
+        "targetSdkVersion": "26.0.0",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
+      },
+      {
+        "name": "release",
+        "signingConfig": "agcRelease",
         "compileSdkVersion": "26.0.0",
         "compatibleSdkVersion": "26.0.0",
         "targetSdkVersion": "26.0.0",
@@ -43,7 +70,7 @@
       "targets": [
         {
           "name": "default",
-          "applyToProducts": ["default"]
+          "applyToProducts": ["default", "release"]
         }
       ]
     }

@@ -11,3 +11,14 @@ local.properties
 /.cxx/
 /capture/
 *.p12.bak
+
+# Release signing (local secrets / keystore). CSR may be committed for AGC handoff.
+/signing/release/.secrets
+/signing/release/*.p12
+/signing/release/*.cer
+/signing/release/*.p7b
+/signing/release/*.pem
+/signing/release/material/
+/signing/release/password.hex
+/signing/release/material/
+/signing/release/*Release.p7b

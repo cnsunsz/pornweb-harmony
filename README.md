@@ -20,7 +20,7 @@ gh workflow run build-hap.yml --repo cnsunsz/pornweb-harmony
 
 ## 状态
 
-- **v1.0.0**：Stage 脚手架可构建 HAP；登录页壳接通 `POST /api/auth/login`
+- **v1.0.1**：AGC release signing + package `com.pornweb.app`；此前 Stage 脚手架可构建 HAP；登录页壳接通 `POST /api/auth/login`
 - 媒体库 / 播放 / 续费尚未移植
 - CI 云编译已接入；华为正式签名待办
 

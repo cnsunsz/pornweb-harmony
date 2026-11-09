@@ -56,3 +56,14 @@ If this machine still has `/workspace/harmonyos-sdk/env.sh`, `source` that inste
 - HarmonyOS SDK **26.0.0.105** (API **26**)
 
 No interactive license prompt is required for `hvigorw` / `ohpm` / `hdc` from this pack.
+
+
+## AGC release signing (local)
+
+Release materials live under `signing/release/` (gitignored keystore/secrets; `.cer`/`.p7b` also ignored).
+
+```bash
+hvigorw assembleHap --mode module -p module=entry@default -p product=release -p buildMode=release --no-daemon
+```
+
+CI currently still builds the **debug** product unless the workflow is pointed at `product=release` and release secrets are provided via GitHub Secrets.

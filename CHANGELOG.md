@@ -16,6 +16,16 @@
 - 产物：`entry/build/default/outputs/default/entry-default-signed.hap`
 
 ## Unreleased
+
+## [1.0.1] - 2026-11-09
+
+### Changed
+- Bundle rename: `com.pornweb.harmony` → **`com.pornweb.app`** (AGC APP ID 6917621310265408820; Huawei reserved `harmony`)
+- Add HarmonyOS **AGC release** signingConfig `agcRelease` + product `release` (`.p12` / `.cer` / `.p7b` under `signing/release/`, passwords only in local `.secrets`)
+
+### Build
+- `hvigorw assembleHap -p product=release -p buildMode=release` → AppGallery-oriented release-signed HAP
+
 ### Added
 - GitHub Actions `build-hap.yml`: download CI slim tools from release `sdk-26.0.0.865`, cache extract, `assembleHap`, upload HAP artifact; attach on `v*` tags
 - Docs: CI is primary build path; local SDK optional (Huawei AGC/release signing still local/TODO)
